@@ -1,4 +1,4 @@
-#include "analysis.h"
+#include "AnalysisMain.h"
 
 void VerifySimulations(char *assertionFile)
 {
@@ -77,7 +77,7 @@ void VerifySimulations(char *assertionFile)
 			int assertIndex = 0;
 			
 			for (i = 0; i < LineSize; i++)
-				if (file[i] == '\n')				// if there is any line feed after the file name
+				if (file[i] == '\n')			// if there is any line feed after the file name
 					file[i] = '\0';				// it is exchanged for a white space
 			
 			ConvertFile(file);
@@ -200,7 +200,7 @@ void VerifySimulations(char *assertionFile)
 							firstXnode = i - 1;
 					}
 					
-					if (assertions[assertIndex].xIsRange)			// if the second x value is different from 0.0, it means there is a range of values to verify
+					if (assertions[assertIndex].xIsRange)
 					{
 						if ((values[i][0] == assertions[assertIndex].xMaxVal) && (lastXnode == -1))		// tries to find the exact value
 						{
@@ -319,15 +319,14 @@ void VerifySimulations(char *assertionFile)
 			perFileRight = 0;
 			perFileWrong = 0;
 
-			for(i = 0; i < numberOfNodes; i++)
-			{
+			for (i = 0; i < numberOfNodes; i++)
 				free (header[i]);
-			}
+            
 			free(header);
-			for(i = 0; i < numberOfLines; i++)
-			{
+			
+            for (i = 0; i < numberOfLines; i++)
 				free (values[i]);
-			}
+            
 			free(values);
 		}
 	}
@@ -342,89 +341,6 @@ void VerifySimulations(char *assertionFile)
 	remove(ConvertedFile);			// content from the folder
 }
 
-void GenerateGeneralLog(FILE *generalLogFile, char *file, int perFileRight, int perFileWrong, int numberOfAssertions)
-{
-	double percentRight, percentWrong;
-	
-	percentRight = (perFileRight / (double)numberOfAssertions) * 100.0;
-	percentWrong = (perFileWrong / (double)numberOfAssertions) * 100.0;
-	
-	if ((generalLogFile = fopen(GeneralAssertsLog, "a")) == NULL)
-		perror("Could not open general log");
-	
-	fprintf(generalLogFile, "File '%s' status:\n", file);
-	fprintf(generalLogFile, "\tNumber of assertions exercised:\t%d\n", numberOfAssertions);
-	fprintf(generalLogFile, "\tNumber of right assertions:\t%d\n", perFileRight);
-	fprintf(generalLogFile, "\tPercent of right assertions:\t%.2f%%\n", percentRight);
-	fprintf(generalLogFile, "\tNumber of wrong assertions:\t%d\n", perFileWrong);
-	fprintf(generalLogFile, "\tPercent of wrong assertions:\t%.2f%%\n\n", percentWrong);
-	
-	if (fclose(generalLogFile))
-		perror("Could not close general log");
-}
-
-void FinishGeneralLog(FILE *generalLogFile, int totalAssertions, int totalRight, int totalWrong)
-{
-	double percentRight, percentWrong;
-	
-	percentRight = (totalRight / (double)totalAssertions) * 100.0;
-	percentWrong = (totalWrong / (double)totalAssertions) * 100.0;
-	
-	if ((generalLogFile = fopen(GeneralAssertsLog, "a")) == NULL)
-		perror("Could not open general log");
-	
-	fprintf(generalLogFile, "Overall simulation fault coverage:\n");
-	fprintf(generalLogFile, "\tTotal number of assertions:\t%d\n", totalAssertions);
-	fprintf(generalLogFile, "\tNumber of right assertions:\t%d\n", totalRight);
-	fprintf(generalLogFile, "\tPercent of right assertions:\t%.2f%%\n", percentRight);
-	fprintf(generalLogFile, "\tNumber of wrong assertions:\t%d\n", totalWrong);
-	fprintf(generalLogFile, "\tPercent of wrong assertions:\t%.2f%%\n\n", percentWrong);
-	
-	if (fclose(generalLogFile))
-		perror("Could not close general log");	
-}
-
-void GenerateFaultsByAssertionLog(FILE *logs[], AssertionValues *assertCells, int numberOfAssertions)
-{
-	char buffer[LineSize];
-	FILE *faultsLogFile;
-	int fileSize;
-	int i;
-	
-	if ((faultsLogFile = fopen(FaultsLog, "w")) == NULL)
-		perror("Could not open faults log");
-	
-	for (i = 0; i < numberOfAssertions; i++)
-	{
-		fseek(logs[i], 0, SEEK_END);
-		fileSize = ftell(logs[i]);
-		rewind(logs[i]);
-		
-		if (fileSize > 0)
-		{
-			fprintf(faultsLogFile, "Assertion command: %s", assertCells[i].assertion);
-			
-			while (fgets(buffer, fileSize, logs[i]) != NULL)
-				fputs(buffer, faultsLogFile);
-		}
-	}
-	
-	if (fclose(faultsLogFile))
-		perror("Could not close faults log");
-}
-
-void LogFaults(FILE *assertFile, double actual, double faultPoint, AssertionValues *assertCell, char *dataFile)
-{
-	fprintf(assertFile, "In file %s:\n", dataFile);
-	fprintf(assertFile, "\tAt %.20f:\n", faultPoint);
-	fprintf(assertFile, "\t\tActual value:\t%.20f\n", actual);
-	
-	if (assertCell->yIsRange)
-		fprintf(assertFile, "\t\tExpected value:\tfrom %.20f to %.20f\n\n", assertCell->yMinVal, assertCell->yMaxVal);
-	else
-		fprintf(assertFile, "\t\tExpected value:\t%.20f\n\n", assertCell->yMinVal);
-}
-
 int GetNodeIndex(char *nodeName, char **header, int numberOfNodes)
 {
 	int i;
@@ -436,103 +352,6 @@ int GetNodeIndex(char *nodeName, char **header, int numberOfNodes)
 	}
 	
 	return -1;
-}
-
-int GetNumberOfAssertions(char *assertionFile)
-{
-	char line[LineSize] = "\0";
-	FILE *assertFile = NULL;
-	int numberOfAssertions = 0;
-	
-	if ((assertFile = fopen(assertionFile, "r")) == NULL)
-		perror("Could not open assertions file");
-		
-	while (fgets(line, LineSize, assertFile) != NULL)
-	{
-		if (strstr(line, "assert") != NULL)
-			numberOfAssertions++;
-	}
-	
-	if (fclose(assertFile))
-		perror("Could not close assertions file after reading it");
-	
-	return numberOfAssertions;
-}
-
-void GetAssertionFromLine(char *line, AssertionValues *assertCell)
-{
-	char xLine[LineSize];
-	char yLine[LineSize];
-	char *token;
-	char *subToken;
-	int i;
-	
-	strcpy(assertCell->assertion, line);
-	
-	token = strtok(line, " \n");
-	
-	while (token != NULL)
-	{
-		if (!strcmp(token, "node"))
-		{
-			token = strtok(NULL, " \n");
-			strcpy(assertCell->nodeName, token);	// saves the node name
-		}
-		else if (!strcmp(token, "value"))
-		{
-			for (i = 0; i < LineSize; i++)
-			{
-				xLine[i] = '\0';
-				yLine[i] = '\0';
-			}
-
-			token = strtok(NULL, "(\n");		// deals with the x values
-			strcpy(xLine, token);
-
-			token = strtok(NULL, "(\n");		// deals with the y values
-			strcpy(yLine, token);
-			
-			if (strstr(xLine, "to") != NULL)
-			{
-				subToken = strtok(xLine, "( )");	// first value
-				
-				assertCell->xMinVal = atof(subToken);
-				
-				subToken = strtok(NULL, "( )");		// string "to"
-				subToken = strtok(NULL, "( )");		// second value
-				
-				assertCell->xMaxVal = atof(subToken);
-				
-				assertCell->xIsRange = 1;
-			}
-			else
-			{
-				subToken = strtok(xLine, "()");		// first value
-				assertCell->xMinVal = atof(subToken);
-			}
-			
-			if (strstr(yLine, "to") != NULL)
-			{
-				subToken = strtok(yLine, "( )");	// first value
-				
-				assertCell->yMinVal = atof(subToken);
-				
-				subToken = strtok(NULL, "( )");		// string "to"
-				subToken = strtok(NULL, "( )");		// second value
-				
-				assertCell->yMaxVal = atof(subToken);
-				
-				assertCell->yIsRange = 1;
-			}
-			else
-			{
-				subToken = strtok(yLine, "()");		// first value
-				assertCell->yMinVal = atof(subToken);
-			}
-		}
-		else
-			token = strtok(NULL, " \n");
-	}
 }
 
 void ListFiles()
@@ -593,9 +412,8 @@ void ConvertFile(char *file)
 	strcat(command, ConvertedFile);
 	
 	for (i = 0; i < CommandSize; i++)
-		if (command[i] == '\n')				// if there is any line feed after the file name
+		if (command[i] == '\n')			// if there is any line feed after the file name
 			command[i] = ' ';			// it is exchanged for a white space
 	
 	system(command);					// executes the command to convert one simulation file
 }
-

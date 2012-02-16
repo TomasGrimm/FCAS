@@ -1,5 +1,9 @@
-#include "configuration.h"
-#include "analysis.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "ConfigurationMain.h"
+#include "AnalysisMain.h"
 
 int main (int argc, char *argv[])
 {
@@ -24,7 +28,7 @@ int main (int argc, char *argv[])
 	else if ((strcmp(argv[1], "-h")) == 0)
 	{
 		printf("Usage format:\n");
-		printf("./TccEDA [-a | -c] <input files>\n");
+		printf("./FCAS [-a | -c] <input files>\n");
 		printf("\t-a\tAnalisys mode - verifies the simulation output and calculates the fault coverage.\n");
 		printf("\t-c\tConfiguration mode - generates the variations used in the simulation process.\n");
 		printf("\t-h\tThis help.\n");

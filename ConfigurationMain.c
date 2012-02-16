@@ -1,4 +1,4 @@
-#include "configuration.h"
+#include "ConfigurationMain.h"
 
 int GetNumberOfLines(FILE *fd)
 {
@@ -29,15 +29,12 @@ void TreatVariations(char *fileName)
 	int indexVectorVariables = 0;					// vectorVariables' iterator
 	int indexSteppedVariables = 0;					// steppedVariables' iterator
 	
-	int steppedVarsIndex = 0;
-	int vectorVarsIndex = 0;
-	
 	int tempFilesIndex = 0;
 	int tempFilesIndexHelper = 0;
 	FILE *tempFiles[numberOfLines];
 	
-	VectorVariable vectorVariables[numberOfLines];			// vector for the vector variables
-	SteppedVariable steppedVariables[numberOfLines];		// vector for the stepped variables
+	VectorVariable vectorVariables[numberOfLines];		// vector for the vector variables
+	SteppedVariable steppedVariables[numberOfLines];	// vector for the stepped variables
 	
 	while (fgets(line, LineSize, inputFd) != NULL)
 	{
@@ -52,7 +49,9 @@ void TreatVariations(char *fileName)
 				.suffix = "\0"
 			};
 			
-			GetRangeFromLine(line, &steppedVariables[indexSteppedVariables++]);
+			GetRangeFromLine(line, &steppedVariables[indexSteppedVariables]);
+			tempFiles[tempFilesIndex++] = CreateSteppedStructure(&steppedVariables[indexSteppedVariables]);
+			indexSteppedVariables++;
 		}
 		else
 		{
@@ -64,24 +63,14 @@ void TreatVariations(char *fileName)
 				.numberOfValues = 0
 			};
 			
-			GetVectorFromLine(line, &vectorVariables[indexVectorVariables++]);
+			GetVectorFromLine(line, &vectorVariables[indexVectorVariables]);
+			tempFiles[tempFilesIndex++] = CreateVectorStructure(&vectorVariables[indexVectorVariables]);
+			indexVectorVariables++;
 		}
 	}
 	
 	if (fclose(inputFd))
 		perror("Failed to close file!");
-	
-	while (vectorVarsIndex < indexVectorVariables)
-	{
-		tempFiles[tempFilesIndex++] = CreateVectorStructure(&vectorVariables[vectorVarsIndex]);
-		vectorVarsIndex++;
-	}
-	
-	while (steppedVarsIndex < indexSteppedVariables)
-	{
-		tempFiles[tempFilesIndex++] = CreateSteppedStructure(&steppedVariables[steppedVarsIndex]);
-		steppedVarsIndex++;
-	}
 	
 	int fileIsEmpty = 1;
 	char outputFileName[strlen(fileName) + 10];		// sums the quantities of characters in the file name and in "_alters.sp"
@@ -94,109 +83,6 @@ void TreatVariations(char *fileName)
 		FillOutFile(tempFiles[tempFilesIndexHelper++], outputFileName, fileIsEmpty);
 		fileIsEmpty = 0;
 	}
-}
-
-void GetRangeFromLine(char *line, SteppedVariable *steppedCell)
-{
-	char *token;
-	int index = 0;
-	int indexSuffix = 0;
-	
-	while (line[index] != '{')
-	{
-		steppedCell->preffix[index] = line[index];
-		index++;
-	}
-	
-	index = strcspn(line, "}");
-	index++;
-	
-	while (line[index] != '\n')
-	{
-		steppedCell->suffix[indexSuffix] = line[index];
-		index++;
-		indexSuffix++;
-	}
-	
-	token = strtok(strchr(line, '{'), "{:}");
-	steppedCell->start = atof(token);
-	
-	token = strtok(NULL, "{:}");
-	steppedCell->end = atof(token);
-	
-	token = strtok(NULL, "{:}");
-	steppedCell->step = atof(token);
-}
-
-void GetVectorFromLine(char *line, VectorVariable *vectorCell)
-{
-	char *token;
-	int index = 0;
-	int indexSuffix = 0;
-	
-	while (line[index] != '{')
-	{
-		vectorCell->preffix[index] = line[index];
-		index++;
-	}
-	
-	index = strcspn(line, "}");
-	index++;
-	
-	while (line[index] != '\n')
-	{
-		vectorCell->suffix[indexSuffix] = line[index];
-		index++;
-		indexSuffix++;
-	}
-	
-	token = strtok(strchr(line, '{'), "{;}'\n");
-	
-	while (token != NULL)
-	{
-		strcpy(vectorCell->values[vectorCell->numberOfValues++], token);
-		
-		token = strtok(NULL, "{;}'\n");
-	}
-}
-
-FILE *CreateSteppedStructure(SteppedVariable *steppedCell)
-{
-	FILE *tempFile;
-	double stepper = steppedCell->start;
-	
-	tempFile = tmpfile();
-	
-	fprintf(tempFile, "%s%.3f%s\n", steppedCell->preffix, stepper, steppedCell->suffix);
-	stepper += steppedCell->step;
-	
-	while (stepper <= steppedCell->end)
-	{
-		fprintf(tempFile, ".alter\n");
-		fprintf(tempFile, "%s%.3f%s\n", steppedCell->preffix, stepper, steppedCell->suffix);
-		
-		stepper += steppedCell->step;
-	}
-	
-	return tempFile;
-}
-
-FILE *CreateVectorStructure(VectorVariable *vectorCell)
-{
-	FILE *tempFile;
-	int index = 0;
-	
-	tempFile = tmpfile();
-	
-	fprintf(tempFile, "%s%s%s\n", vectorCell->preffix, vectorCell->values[index++], vectorCell->suffix);
-	
-	while (index < vectorCell->numberOfValues)
-	{
-		fprintf(tempFile, ".alter\n");
-		fprintf(tempFile, "%s%s%s\n", vectorCell->preffix, vectorCell->values[index++], vectorCell->suffix);
-	}
-
-	return tempFile;
 }
 
 void FillOutFile(FILE *structureFile, char *alterFileName, int fileIsEmpty)
@@ -285,4 +171,3 @@ void FillOutFile(FILE *structureFile, char *alterFileName, int fileIsEmpty)
 		free(alterBuffer);
 	}
 }
-
