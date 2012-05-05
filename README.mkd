@@ -1,0 +1,11 @@
+	The purpose of this tool is to help testing RTL (Register Transfer Level) projects under development.
+
+	It presents to different funcionalities:
+
+	#1 Configuration
+	   Based on a file written by the user, the first stage generates a new file containing the configurations to be applied to the project's simulation routine. 
+
+	#2 Analysis
+	   This stage is to be called after the simulation has been run, so that it analyses the generated files, based on an assertions file created by the user, which contain the simulation results and produces two output files:
+	   General log: this is a more general description of the results for each file analysed and shows the quantity and percentage of both right and wrong assertions, and also a summation of all analyzed assertions.
+	   Faults by assertion log: this is a description of all the failed assertions, as it logs the instant when it occurred, the real value and the expected value.

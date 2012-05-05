@@ -1,14 +1,25 @@
 CC=gcc
 CFLAGS=-c -Wall -Wextra
 LDFLAGS=
-SOURCES=main.c AnalysisMain.c AnalysisAssertions.c AnalysisLogFiles.c ConfigurationMain.c ConfigurationSteppedVariable.c ConfigurationVectorVariable.c Constants.h
-OBJECTS=$(SOURCES:.c=.o)
+
+SOURCEFILESDIR = src
+SOURCEFILES = \
+	$(SOURCEFILESDIR)/main.c \
+	$(SOURCEFILESDIR)/AnalysisMain.c \
+	$(SOURCEFILESDIR)/AnalysisAssertions.c \
+	$(SOURCEFILESDIR)/AnalysisLogFiles.c \
+	$(SOURCEFILESDIR)/ConfigurationMain.c \
+	$(SOURCEFILESDIR)/ConfigurationSteppedVariable.c \
+	$(SOURCEFILESDIR)/ConfigurationVectorVariable.c \
+	$(SOURCEFILESDIR)/Constants.h
+
+OBJECTS=$(SOURCEFILES:.c=.o)
 EXECUTABLE=FCAS
 
 .SILENT:
 
-all: $(SOURCES) $(EXECUTABLE)
-	
+all: $(SOURCEFILES) $(EXECUTABLE)
+
 $(EXECUTABLE): $(OBJECTS) 
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
@@ -16,5 +27,5 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm *.o
-	rm FCAS 
+	rm $(SOURCEFILESDIR)/*.o
+	rm FCAS
